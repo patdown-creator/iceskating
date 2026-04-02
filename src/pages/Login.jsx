@@ -15,14 +15,26 @@ const Login = () => {
     e.preventDefault()
     setLoading(true)
     setError(null)
+    console.log('--- Handle Login Started ---')
+    console.log('Credentials:', { email })
     
     try {
+      console.log('Calling signIn promise...')
       const { data, error } = await signIn({ email, password })
-      if (error) throw error
+      console.log('Sign-in result:', { data, error })
+      
+      if (error) {
+        console.error('Sign-in error details:', error)
+        throw error
+      }
+      
+      console.log('Sign-in SUCCESS. Navigating to root...')
       navigate('/')
     } catch (err) {
+      console.error('Catch block error:', err)
       setError(err.message || 'Failed to sign in')
     } finally {
+      console.log('--- Handle Login Finished ---')
       setLoading(false)
     }
   }

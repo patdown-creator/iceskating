@@ -8,43 +8,72 @@ export const AuthProvider = ({ children }) => {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  // Effect 1: Handle Auth State Changes
   useEffect(() => {
-    // Check active sessions and sets the user
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user ?? null)
-      
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single()
-        setProfile(profile)
+    const getInitialSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        setUser(session?.user ?? null)
+      } catch (err) {
+        console.error('Error getting initial session:', err)
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
 
-    getSession()
+    getInitialSession()
 
-    // Listen for changes on auth state (logged in, signed out, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('Auth event:', _event)
       setUser(session?.user ?? null)
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single()
-        setProfile(profile)
-      } else {
+      if (!session) {
         setProfile(null)
+        setLoading(false)
       }
-      setLoading(false)
     })
 
     return () => subscription.unsubscribe()
   }, [])
+
+  // Effect 2: Handle Profile Fetching when User changes
+  useEffect(() => {
+    if (!user) return
+
+    const fetchProfile = async () => {
+      console.log('User detected, fetching profile for:', user.id)
+      
+      // Safety timeout to prevent infinite loading
+      const timeoutId = setTimeout(() => {
+        if (loading) {
+          console.warn('Profile fetch timeout, forcing loading to false')
+          setLoading(false)
+        }
+      }, 3000)
+
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+
+        if (error) {
+          console.warn('Profile not found or error:', error.message)
+          setProfile(null)
+        } else {
+          console.log('Profile loaded:', data.role)
+          setProfile(data)
+        }
+      } catch (err) {
+        console.error('Unexpected error fetching profile:', err)
+      } finally {
+        clearTimeout(timeoutId)
+        setLoading(false)
+      }
+    }
+
+    fetchProfile()
+  }, [user])
 
   const value = {
     signUp: (data) => supabase.auth.signUp(data),
@@ -85,7 +114,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   )
 }

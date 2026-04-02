@@ -19,6 +19,7 @@ import InstructorFeedback from './pages/instructor/Feedback'
 
 // Layouts
 import MainLayout from './layouts/MainLayout'
+import { Loader2 } from 'lucide-react'
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, profile, loading } = useAuth()
@@ -110,10 +111,28 @@ function App() {
 }
 
 const DashboardRedirect = () => {
-  const { profile, loading } = useAuth()
-  if (loading) return <div>Loading...</div>
-  if (!profile) return <Navigate to="/login" />
+  const { user, profile, loading } = useAuth()
   
+  console.log('DashboardRedirect state:', { loading, hasUser: !!user, hasProfile: !!profile })
+  
+  if (loading) return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <Loader2 className="animate-spin" size={40} color="var(--primary-color)" />
+    </div>
+  )
+  
+  if (!user) {
+    console.log('No user session, redirecting to login...')
+    return <Navigate to="/login" />
+  }
+  
+  if (!profile) {
+    console.log('User exists but profile missing, redirecting to student by default...')
+    // Fallback if profile didn't load for some reason
+    return <Navigate to="/student" />
+  }
+  
+  console.log('Redirecting based on role:', profile.role)
   if (profile.role === 'admin') return <Navigate to="/admin" />
   if (profile.role === 'instructor') return <Navigate to="/instructor" />
   return <Navigate to="/student" />
