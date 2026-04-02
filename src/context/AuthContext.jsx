@@ -12,11 +12,11 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const getInitialSession = async () => {
       try {
+        setLoading(true) // Start loading
         const { data: { session } } = await supabase.auth.getSession()
         setUser(session?.user ?? null)
       } catch (err) {
         console.error('Error getting initial session:', err)
-      } finally {
         setLoading(false)
       }
     }
@@ -29,6 +29,8 @@ export const AuthProvider = ({ children }) => {
       if (!session) {
         setProfile(null)
         setLoading(false)
+      } else {
+        setLoading(true) // Re-trigger loading for profile fetch
       }
     })
 
@@ -37,18 +39,19 @@ export const AuthProvider = ({ children }) => {
 
   // Effect 2: Handle Profile Fetching when User changes
   useEffect(() => {
-    if (!user) return
+    if (!user) {
+      // If we don't have a user, we aren't loading a profile
+      if (!loading) return; 
+      return;
+    }
 
     const fetchProfile = async () => {
       console.log('User detected, fetching profile for:', user.id)
+      setLoading(true)
       
-      // Safety timeout to prevent infinite loading
       const timeoutId = setTimeout(() => {
-        if (loading) {
-          console.warn('Profile fetch timeout, forcing loading to false')
-          setLoading(false)
-        }
-      }, 3000)
+        setLoading(false)
+      }, 5000)
 
       try {
         const { data, error } = await supabase
@@ -58,14 +61,14 @@ export const AuthProvider = ({ children }) => {
           .single()
 
         if (error) {
-          console.warn('Profile not found or error:', error.message)
+          console.warn('Profile fetch error:', error.message)
           setProfile(null)
         } else {
-          console.log('Profile loaded:', data.role)
+          console.log('Profile loaded successfully:', data.role)
           setProfile(data)
         }
       } catch (err) {
-        console.error('Unexpected error fetching profile:', err)
+        console.error('Unexpected profile fetch error:', err)
       } finally {
         clearTimeout(timeoutId)
         setLoading(false)
