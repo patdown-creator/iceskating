@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { getDemoRole, formatNameFromEmail } from '../lib/authUtils'
 
 const AuthContext = createContext({})
 
@@ -87,14 +88,11 @@ export const AuthProvider = ({ children }) => {
       const isDemo = !import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY
       
       if (isDemo) {
-        let role = 'student'
-        if (email.includes('admin')) role = 'admin'
-        else if (email.includes('instructor')) role = 'instructor'
-        
+        const role = getDemoRole(email)
         const mockUser = { id: 'demo-user-id', email }
         const mockProfile = { 
           id: 'demo-user-id', 
-          full_name: email.split('@')[0].toUpperCase(), 
+          full_name: formatNameFromEmail(email), 
           role 
         }
         

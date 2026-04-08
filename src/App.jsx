@@ -17,6 +17,12 @@ import AdminReports from './pages/admin/Reports'
 import InstructorAttendance from './pages/instructor/Attendance'
 import InstructorFeedback from './pages/instructor/Feedback'
 
+// New Phase 2 Pages
+import Profile from './pages/Profile'
+import StudentProgress from './pages/student/Progress'
+import AdminUsers from './pages/admin/Users'
+import AdminLevels from './pages/admin/Levels'
+
 // Layouts
 import MainLayout from './layouts/MainLayout'
 import { Loader2 } from 'lucide-react'
@@ -67,6 +73,22 @@ function App() {
             } 
           />
           <Route 
+            path="/admin/users" 
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminUsers />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/levels" 
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminLevels />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
             path="/instructor" 
             element={
               <ProtectedRoute allowedRoles={['instructor']}>
@@ -91,10 +113,26 @@ function App() {
             } 
           />
           <Route 
-            path="/student/*" 
+            path="/student" 
             element={
               <ProtectedRoute allowedRoles={['student']}>
                 <StudentDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/student/progress" 
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <StudentProgress />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             } 
           />

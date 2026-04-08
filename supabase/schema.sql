@@ -80,6 +80,51 @@ ALTER TABLE feedback_reports ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public profiles are viewable by everyone." ON profiles FOR SELECT USING (true);
 CREATE POLICY "Users can update own profile." ON profiles FOR UPDATE USING (auth.uid() = id);
 
+-- LEVELS: All can view, only Admin can edit
+CREATE POLICY "Levels are viewable by everyone" ON levels FOR SELECT USING (true);
+CREATE POLICY "Only admins can manage levels" ON levels 
+  FOR ALL USING (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  );
+
+-- CLASSES: All can view, only Admin can edit
+CREATE POLICY "Classes are viewable by everyone" ON classes FOR SELECT USING (true);
+CREATE POLICY "Only admins can manage classes" ON classes 
+  FOR ALL USING (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  );
+
+-- CLASS INSTRUCTORS: All can view, only Admin can edit
+CREATE POLICY "Class instructors viewable by everyone" ON class_instructors FOR SELECT USING (true);
+CREATE POLICY "Only admins can manage class instructors" ON class_instructors 
+  FOR ALL USING (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  );
+
+-- ENROLLMENTS: Users can view their own, Admins view all
+CREATE POLICY "View own enrollments" ON enrollments FOR SELECT 
+  USING (student_id = auth.uid() OR EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'instructor')));
+CREATE POLICY "Admins manage enrollments" ON enrollments 
+  FOR ALL USING (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  );
+
+-- ATTENDANCE: Students view own, Instructors/Admins view all and manage
+CREATE POLICY "Instructors and Admins manage attendance" ON attendance 
+  FOR ALL USING (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'instructor'))
+  );
+CREATE POLICY "Students view own attendance" ON attendance 
+  FOR SELECT USING (student_id = auth.uid());
+
+-- FEEDBACK REPORTS: Only owner student can view, Instructors/Admins manage
+CREATE POLICY "Instructors and Admins manage feedback" ON feedback_reports 
+  FOR ALL USING (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'instructor'))
+  );
+CREATE POLICY "Students view own feedback" ON feedback_reports 
+  FOR SELECT USING (student_id = auth.uid());
+
 -- Trigger to create profile on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$

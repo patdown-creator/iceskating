@@ -1,7 +1,7 @@
 import React from 'react'
 import { Outlet, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { LogOut, Home, Users, Calendar, Award, ClipboardCheck, Printer } from 'lucide-react'
+import { LogOut, Home, Users, Calendar, Award, ClipboardCheck, Printer, User } from 'lucide-react'
 
 const MainLayout = () => {
   const { profile, signOut } = useAuth()
@@ -19,15 +19,18 @@ const MainLayout = () => {
       { label: 'Classes', icon: <Calendar size={20} />, path: '/admin/classes' },
       { label: 'Levels', icon: <Award size={20} />, path: '/admin/levels' },
       { label: 'Reports', icon: <Printer size={20} />, path: '/admin/reports' },
+      { label: 'My Profile', icon: <User size={20} />, path: '/profile' },
     ],
     instructor: [
       { label: 'My Classes', icon: <Calendar size={20} />, path: '/instructor' },
       { label: 'Attendance', icon: <ClipboardCheck size={20} />, path: '/instructor/attendance' },
       { label: 'Feedback', icon: <Award size={20} />, path: '/instructor/feedback' },
+      { label: 'My Profile', icon: <User size={20} />, path: '/profile' },
     ],
     student: [
       { label: 'My Schedule', icon: <Calendar size={20} />, path: '/student' },
       { label: 'My Progress', icon: <Award size={20} />, path: '/student/progress' },
+      { label: 'My Profile', icon: <User size={20} />, path: '/profile' },
     ],
   }
 
