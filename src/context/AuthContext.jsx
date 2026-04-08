@@ -38,16 +38,32 @@ export const AuthProvider = ({ children }) => {
     return () => subscription.unsubscribe()
   }, [])
 
+  // Centralized Demo Mode check
+  const isDemo = !import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY
+
   // Effect 2: Handle Profile Fetching when User changes
   useEffect(() => {
     if (!user) {
-      // If we don't have a user, we aren't loading a profile
       if (!loading) return; 
       return;
     }
 
+    // Skip database fetch if in Demo Mode
+    if (isDemo) {
+      console.log('Demo mode detected, skipping database profile fetch')
+      if (!profile) {
+        setProfile({ 
+          id: user.id, 
+          full_name: formatNameFromEmail(user.email), 
+          role: getDemoRole(user.email) 
+        })
+      }
+      setLoading(false)
+      return
+    }
+
     const fetchProfile = async () => {
-      console.log('User detected, fetching profile for:', user.id)
+      console.log('User detected, fetching profile from Supabase for:', user.id)
       setLoading(true)
       
       const timeoutId = setTimeout(() => {
@@ -77,7 +93,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     fetchProfile()
-  }, [user])
+  }, [user, isDemo])
 
   const value = {
     signUp: (data) => supabase.auth.signUp(data),
@@ -85,7 +101,6 @@ export const AuthProvider = ({ children }) => {
       const { email, password } = data
       
       // If we are in demo mode, mock the sign-in
-      const isDemo = !import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY
       
       if (isDemo) {
         const role = getDemoRole(email)
