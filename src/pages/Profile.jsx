@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { User, Mail, Shield, Save, CheckCircle } from 'lucide-react'
 

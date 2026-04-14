@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { supabase } from '../../lib/supabase'
 import { Award, Save, Search, User } from 'lucide-react'
 
 const Feedback = () => {
