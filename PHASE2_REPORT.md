@@ -21,6 +21,8 @@
 ## 2. Automated Verification
 I have implemented unit tests to prove the core functions of the application work as intended. 
 
+![Unit Test Success Screenshot](/Users/patrickdowney/.gemini/antigravity/brain/4d4e5418-f3aa-4658-8c1d-a0c4bceb44e0/unit_test_success_screenshot_1775663960668.png)
+
 - **Test Suite**: `src/tests/auth.test.jsx`
 - **Configuration**: `vitest.config.js` and `src/tests/setup.js`
 - **Core Logic Tested**: Role detection markers (admin/instructor/student) and email name formatting.

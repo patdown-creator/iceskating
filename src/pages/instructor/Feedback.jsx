@@ -5,23 +5,69 @@ const Feedback = () => {
   const [selectedStudent, setSelectedStudent] = useState(null)
   const [feedback, setFeedback] = useState('')
   const [skills, setSkills] = useState([])
+  const [students, setStudents] = useState([])
+  const [loading, setLoading] = useState(true)
 
   const availableSkills = [
     'Forward Crossovers', 'Backward Crossovers', 'Three-Turns', 
     'Mohawks', 'Sit Spin', 'Camel Spin', 'Waltz Jump', 'Salchow'
   ]
 
-  const students = [
-    { id: 1, name: 'Alice Cooper', level: 'Basic 1' },
-    { id: 2, name: 'Bob Dylan', level: 'Basic 1' },
-    { id: 3, name: 'Charlie Brown', level: 'Basic 1' },
-  ]
+  useEffect(() => {
+    fetchStudents()
+  }, [])
+
+  const fetchStudents = async () => {
+    try {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', 'student')
+        .order('full_name')
+      
+      if (error) throw error
+      setStudents(data || [])
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const toggleSkill = (skill) => {
     if (skills.includes(skill)) {
       setSkills(skills.filter(s => s !== skill))
     } else {
       setSkills([...skills, skill])
+    }
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!selectedStudent) return
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      const { error } = await supabase
+        .from('feedback_reports')
+        .insert([{
+          student_id: selectedStudent.id,
+          instructor_id: user.id,
+          feedback: feedback,
+          skills_achieved: skills,
+          // Note: In a real app, we'd also link the class_id
+        }])
+
+      if (error) throw error
+      
+      alert('Feedback successfully saved for ' + selectedStudent.full_name)
+      setFeedback('')
+      setSkills([])
+      setSelectedStudent(null)
+    } catch (err) {
+      alert('Error saving feedback: ' + err.message)
     }
   }
 
@@ -38,45 +84,53 @@ const Feedback = () => {
           <div style={{ padding: '1rem', borderBottom: '1px solid #f1f5f9' }}>
             <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>Select Student</h3>
           </div>
-          <div style={{ padding: '0.5rem' }}>
-            {students.map(student => (
-              <button 
-                key={student.id}
-                onClick={() => setSelectedStudent(student)}
-                style={{
-                  width: '100%',
-                  textAlign: 'left',
-                  padding: '0.75rem 1rem',
-                  borderRadius: '0.5rem',
-                  background: selectedStudent?.id === student.id ? '#f0f9ff' : 'transparent',
-                  color: selectedStudent?.id === student.id ? 'var(--primary-color)' : 'inherit',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  marginBottom: '0.25rem'
-                }}
-              >
-                <div style={{ 
-                  width: '32px', height: '32px', borderRadius: '50%', background: '#e2e8f0',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}>
-                  <User size={16} />
-                </div>
-                <div>
-                  <p style={{ fontWeight: 600, fontSize: '0.875rem' }}>{student.name}</p>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{student.level}</p>
-                </div>
-              </button>
-            ))}
+          <div style={{ padding: '0.5rem', maxHeight: '500px', overflowY: 'auto' }}>
+            {loading ? (
+              <div style={{ padding: '1rem', textAlign: 'center' }}>Loading students...</div>
+            ) : students.length > 0 ? (
+              students.map(student => (
+                <button 
+                  key={student.id}
+                  onClick={() => setSelectedStudent(student)}
+                  style={{
+                    width: '100%',
+                    textAlign: 'left',
+                    padding: '0.75rem 1rem',
+                    borderRadius: '0.5rem',
+                    background: selectedStudent?.id === student.id ? '#f0f9ff' : 'transparent',
+                    color: selectedStudent?.id === student.id ? 'var(--primary-color)' : 'inherit',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    marginBottom: '0.25rem',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <div style={{ 
+                    width: '32px', height: '32px', borderRadius: '50%', background: '#e2e8f0',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}>
+                    <User size={16} />
+                  </div>
+                  <div>
+                    <p style={{ fontWeight: 600, fontSize: '0.875rem' }}>{student.full_name}</p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{student.email}</p>
+                  </div>
+                </button>
+              ))
+            ) : (
+              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No students found.</div>
+            )}
           </div>
         </div>
 
         {/* Feedback Form */}
         <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1rem', border: '1px solid var(--sidebar-border)' }}>
           {selectedStudent ? (
-            <form onSubmit={(e) => { e.preventDefault(); alert('Feedback saved!'); }}>
+            <form onSubmit={handleSubmit}>
               <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.5rem' }}>
-                Feedback for {selectedStudent.name}
+                Feedback for {selectedStudent.full_name}
               </h3>
 
               <div style={{ marginBottom: '1.5rem' }}>
@@ -98,7 +152,8 @@ const Feedback = () => {
                         borderColor: skills.includes(skill) ? 'var(--primary-color)' : '#e2e8f0',
                         background: skills.includes(skill) ? '#e0f2fe' : 'transparent',
                         color: skills.includes(skill) ? 'var(--primary-color)' : 'var(--text-muted)',
-                        transition: 'all 0.2s'
+                        transition: 'all 0.2s',
+                        cursor: 'pointer'
                       }}
                     >
                       {skill}
@@ -124,6 +179,7 @@ const Feedback = () => {
                     resize: 'vertical',
                     fontFamily: 'inherit'
                   }}
+                  required
                 />
               </div>
 

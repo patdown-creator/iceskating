@@ -3,18 +3,52 @@ import { Users, Mail, Shield, MoreVertical, Edit2, Trash2, Search } from 'lucide
 
 const AdminUsers = () => {
   const [searchTerm, setSearchTerm] = useState('')
+  const [users, setUsers] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  // Mock users
-  const users = [
-    { id: '1', full_name: 'Patrick Downey', email: 'admin@skate.com', role: 'admin' },
-    { id: '2', full_name: 'Sarah Instructor', email: 'instructor@skate.com', role: 'instructor' },
-    { id: '3', full_name: 'John Student', email: 'student@skate.com', role: 'student' },
-    { id: '4', full_name: 'Emily skater', email: 'emily@skate.com', role: 'student' },
-  ]
+  useEffect(() => {
+    fetchUsers()
+  }, [])
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('full_name')
+      
+      if (error) throw error
+      setUsers(data || [])
+    } catch (error) {
+      console.error('Error fetching users:', error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const toggleRole = async (userId, currentRole) => {
+    const roles = ['student', 'instructor', 'admin']
+    const nextRole = roles[(roles.indexOf(currentRole) + 1) % roles.length]
+    
+    if (!window.confirm(`Change role from ${currentRole} to ${nextRole}?`)) return
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: nextRole })
+        .eq('id', userId)
+      
+      if (error) throw error
+      fetchUsers()
+    } catch (error) {
+      alert('Error updating role: ' + error.message)
+    }
+  }
 
   const filteredUsers = users.filter(user => 
-    user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    user.email?.toLowerCase().includes(searchTerm.toLowerCase()))
   )
 
   return (
@@ -50,73 +84,83 @@ const AdminUsers = () => {
         boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
         border: '1px solid var(--sidebar-border)'
       }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <thead>
-            <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--sidebar-border)' }}>
-              <th style={{ padding: '1rem 1.5rem', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-muted)' }}>User</th>
-              <th style={{ padding: '1rem 1.5rem', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-muted)' }}>Role</th>
-              <th style={{ padding: '1rem 1.5rem', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-muted)' }}>Status</th>
-              <th style={{ padding: '1rem 1.5rem', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-muted)' }}></th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredUsers.map((user) => (
-              <tr key={user.id} style={{ borderBottom: '1px solid var(--sidebar-border)', transition: 'background 0.2s' }}>
-                <td style={{ padding: '1rem 1.5rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ 
-                      width: '36px', 
-                      height: '36px', 
-                      borderRadius: '50%', 
-                      background: 'var(--primary-color)', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'center',
-                      color: 'white',
-                      fontSize: '0.875rem',
-                      fontWeight: 600
-                    }}>
-                      {user.full_name.charAt(0)}
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{user.full_name}</div>
-                      <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{user.email}</div>
-                    </div>
-                  </div>
-                </td>
-                <td style={{ padding: '1rem 1.5rem' }}>
-                  <span style={{ 
-                    fontSize: '0.75rem', 
-                    fontWeight: 600, 
-                    padding: '0.25rem 0.625rem', 
-                    borderRadius: '1rem',
-                    textTransform: 'uppercase',
-                    background: user.role === 'admin' ? '#fee2e2' : user.role === 'instructor' ? '#e0f2fe' : '#f1f5f9',
-                    color: user.role === 'admin' ? '#dc2626' : user.role === 'instructor' ? '#0284c7' : '#64748b'
-                  }}>
-                    {user.role}
-                  </span>
-                </td>
-                <td style={{ padding: '1rem 1.5rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#16a34a' }}></div>
-                    <span style={{ fontSize: '0.875rem' }}>Active</span>
-                  </div>
-                </td>
-                <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
-                  <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                    <button style={{ p: '0.5rem', borderRadius: '0.375rem', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)' }}>
-                      <Edit2 size={16} />
-                    </button>
-                    <button style={{ p: '0.5rem', borderRadius: '0.375rem', border: 'none', background: 'transparent', cursor: 'pointer', color: '#ef4444' }}>
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </td>
+        {loading ? (
+          <div style={{ padding: '2rem', textAlign: 'center' }}>Loading users...</div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--sidebar-border)' }}>
+                <th style={{ padding: '1rem 1.5rem', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-muted)' }}>User</th>
+                <th style={{ padding: '1rem 1.5rem', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-muted)' }}>Role</th>
+                <th style={{ padding: '1rem 1.5rem', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-muted)' }}>Status</th>
+                <th style={{ padding: '1rem 1.5rem', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-muted)' }}>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredUsers.map((user) => (
+                <tr key={user.id} style={{ borderBottom: '1px solid var(--sidebar-border)', transition: 'background 0.2s' }}>
+                  <td style={{ padding: '1rem 1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{ 
+                        width: '36px', 
+                        height: '36px', 
+                        borderRadius: '50%', 
+                        background: 'var(--primary-color)', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontSize: '0.875rem',
+                        fontWeight: 600
+                      }}>
+                        {user.full_name?.charAt(0) || '?'}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{user.full_name}</div>
+                        <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{user.email}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style={{ padding: '1rem 1.5rem' }}>
+                    <span style={{ 
+                      fontSize: '0.75rem', 
+                      fontWeight: 600, 
+                      padding: '0.25rem 0.625rem', 
+                      borderRadius: '1rem',
+                      textTransform: 'uppercase',
+                      background: user.role === 'admin' ? '#fee2e2' : user.role === 'instructor' ? '#e0f2fe' : '#f1f5f9',
+                      color: user.role === 'admin' ? '#dc2626' : user.role === 'instructor' ? '#0284c7' : '#64748b'
+                    }}>
+                      {user.role}
+                    </span>
+                  </td>
+                  <td style={{ padding: '1rem 1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#16a34a' }}></div>
+                      <span style={{ fontSize: '0.875rem' }}>Active</span>
+                    </div>
+                  </td>
+                  <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                      <button 
+                        onClick={() => toggleRole(user.id, user.role)}
+                        title="Change Role"
+                        style={{ padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0', background: 'white', cursor: 'pointer', color: 'var(--text-muted)' }}
+                      >
+                        <Shield size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filteredUsers.length === 0 && (
+                <tr>
+                  <td colSpan="4" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No users found.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   )

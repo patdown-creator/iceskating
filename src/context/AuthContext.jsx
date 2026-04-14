@@ -38,28 +38,12 @@ export const AuthProvider = ({ children }) => {
     return () => subscription.unsubscribe()
   }, [])
 
-  // Centralized Demo Mode check
-  const isDemo = !import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY
-
   // Effect 2: Handle Profile Fetching when User changes
   useEffect(() => {
     if (!user) {
       if (!loading) return; 
+      setLoading(false);
       return;
-    }
-
-    // Skip database fetch if in Demo Mode
-    if (isDemo) {
-      console.log('Demo mode detected, skipping database profile fetch')
-      if (!profile) {
-        setProfile({ 
-          id: user.id, 
-          full_name: formatNameFromEmail(user.email), 
-          role: getDemoRole(user.email) 
-        })
-      }
-      setLoading(false)
-      return
     }
 
     const fetchProfile = async () => {
@@ -93,29 +77,11 @@ export const AuthProvider = ({ children }) => {
     }
 
     fetchProfile()
-  }, [user, isDemo])
+  }, [user])
 
   const value = {
     signUp: (data) => supabase.auth.signUp(data),
     signIn: async (data) => {
-      const { email, password } = data
-      
-      // If we are in demo mode, mock the sign-in
-      
-      if (isDemo) {
-        const role = getDemoRole(email)
-        const mockUser = { id: 'demo-user-id', email }
-        const mockProfile = { 
-          id: 'demo-user-id', 
-          full_name: formatNameFromEmail(email), 
-          role 
-        }
-        
-        setUser(mockUser)
-        setProfile(mockProfile)
-        return { data: { user: mockUser }, error: null }
-      }
-      
       return supabase.auth.signInWithPassword(data)
     },
     signOut: () => {

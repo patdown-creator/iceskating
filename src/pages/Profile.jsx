@@ -7,11 +7,21 @@ const Profile = () => {
   const [fullName, setFullName] = useState(profile?.full_name || '')
   const [saved, setSaved] = useState(false)
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault()
-    // In a real app, we would update Supabase here
-    setSaved(true)
-    setTimeout(() => setSaved(false), 3000)
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ full_name: fullName })
+        .eq('id', user.id)
+      
+      if (error) throw error
+      
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    } catch (err) {
+      alert('Error saving profile: ' + err.message)
+    }
   }
 
   return (
