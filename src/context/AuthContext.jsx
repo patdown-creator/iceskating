@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { getDemoRole, formatNameFromEmail } from '../lib/authUtils'
 
 const AuthContext = createContext({})
 

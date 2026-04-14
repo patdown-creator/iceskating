@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
-import { Award, CheckCircle2, Circle, Star, Trophy } from 'lucide-react'
+import { CheckCircle2, Star, Trophy } from 'lucide-react'
 
 const StudentProgress = () => {
   const [reports, setReports] = useState([])
