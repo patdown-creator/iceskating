@@ -2,10 +2,29 @@ import React, { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { Calendar, Check, X, Search } from 'lucide-react'
 
+const demoClasses = [
+  { id: 'demo-class-1', day: 'Monday', time_slot: '4:00 PM - 5:00 PM', levels: { name: 'Basic Skills 1' } },
+  { id: 'demo-class-2', day: 'Wednesday', time_slot: '5:30 PM - 6:30 PM', levels: { name: 'Basic Skills 2' } }
+]
+
+const demoRoster = {
+  'demo-class-1': [
+    { id: 'student-1', name: 'Emma Carter', status: 'present' },
+    { id: 'student-2', name: 'Noah Lee', status: 'absent' },
+    { id: 'student-3', name: 'Liam Brooks', status: 'present' }
+  ],
+  'demo-class-2': [
+    { id: 'student-4', name: 'Ava Turner', status: 'present' },
+    { id: 'student-5', name: 'Mia Torres', status: 'present' }
+  ]
+}
+
 const Attendance = () => {
   const [selectedClass, setSelectedClass] = useState('')
   const [classes, setClasses] = useState([])
   const [attendance, setAttendance] = useState([])
+  const [searchTerm, setSearchTerm] = useState('')
+  const [usingDemoData, setUsingDemoData] = useState(false)
   const [loading, setLoading] = useState(false)
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
 
@@ -14,14 +33,30 @@ const Attendance = () => {
   }, [])
 
   const fetchClasses = async () => {
-    const { data } = await supabase.from('classes').select('*, levels(name)')
-    setClasses(data || [])
-    if (data?.length > 0) setSelectedClass(data[0].id)
+    try {
+      const { data, error } = await supabase.from('classes').select('*, levels(name)')
+      if (error) throw error
+
+      const resolvedClasses = data?.length ? data : demoClasses
+      setClasses(resolvedClasses)
+      if (resolvedClasses.length > 0) setSelectedClass(resolvedClasses[0].id)
+      setUsingDemoData(!data?.length)
+    } catch (err) {
+      setClasses(demoClasses)
+      setSelectedClass(demoClasses[0].id)
+      setUsingDemoData(true)
+    }
   }
 
   const loadRoster = async () => {
     if (!selectedClass) return
     setLoading(true)
+    if (usingDemoData) {
+      setAttendance(demoRoster[selectedClass] || [])
+      setLoading(false)
+      return
+    }
+
     try {
       const { data: enrollments, error } = await supabase
         .from('enrollments')
@@ -53,13 +88,22 @@ const Attendance = () => {
     }
   }
 
-  const toggleAttendance = (id) => {
+  const setAttendanceStatus = (id, status) => {
     setAttendance(attendance.map(item => 
-      item.id === id ? { ...item, status: item.status === 'present' ? 'absent' : 'present' } : item
+      item.id === id ? { ...item, status } : item
     ))
   }
 
+  const filteredAttendance = attendance.filter((student) =>
+    student.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
   const handleSave = async () => {
+    if (usingDemoData) {
+      alert('Attendance saved successfully! (demo mode)')
+      return
+    }
+
     try {
       const records = attendance.map(a => ({
         class_id: selectedClass,
@@ -121,6 +165,8 @@ const Attendance = () => {
             <input 
               type="text" 
               placeholder="Search students..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               style={{ width: '100%', padding: '0.5rem 0.5rem 0.5rem 2.5rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}
             />
           </div>
@@ -133,7 +179,7 @@ const Attendance = () => {
           {loading ? (
             <div style={{ textAlign: 'center', padding: '2rem' }}>Loading roster...</div>
           ) : attendance.length > 0 ? (
-            attendance.map((student) => (
+            filteredAttendance.map((student) => (
               <div key={student.id} style={{ 
                 display: 'flex', 
                 alignItems: 'center', 
@@ -146,7 +192,7 @@ const Attendance = () => {
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <button 
-                    onClick={() => toggleAttendance(student.id)}
+                    onClick={() => setAttendanceStatus(student.id, 'present')}
                     style={{
                       width: '40px',
                       height: '40px',
@@ -163,7 +209,7 @@ const Attendance = () => {
                     <Check size={20} />
                   </button>
                   <button 
-                    onClick={() => toggleAttendance(student.id)}
+                    onClick={() => setAttendanceStatus(student.id, 'absent')}
                     style={{
                       width: '40px',
                       height: '40px',
@@ -184,7 +230,7 @@ const Attendance = () => {
             ))
           ) : (
             <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-              Select a class and click "Load Roster" to start.
+              {attendance.length > 0 ? 'No students match your search.' : 'Select a class and click "Load Roster" to start.'}
             </div>
           )}
         </div>
@@ -194,7 +240,6 @@ const Attendance = () => {
           </div>
         )}
       </div>
-    </div>
     </div>
   )
 }

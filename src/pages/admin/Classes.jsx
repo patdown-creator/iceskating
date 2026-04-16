@@ -2,11 +2,37 @@ import React, { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { Plus, Edit, Trash2, Calendar, MapPin, Award } from 'lucide-react'
 
+const demoLevels = [
+  { id: 'demo-level-1', name: 'Basic Skills 1' },
+  { id: 'demo-level-2', name: 'Basic Skills 2' },
+  { id: 'demo-level-3', name: 'Pre-Free Skate' }
+]
+
+const demoClasses = [
+  {
+    id: 'demo-class-1',
+    day: 'Monday',
+    time_slot: '4:00 PM - 5:00 PM',
+    ice_location: 'Rink A',
+    level_id: 'demo-level-1',
+    levels: { name: 'Basic Skills 1' }
+  },
+  {
+    id: 'demo-class-2',
+    day: 'Wednesday',
+    time_slot: '5:30 PM - 6:30 PM',
+    ice_location: 'Rink B',
+    level_id: 'demo-level-2',
+    levels: { name: 'Basic Skills 2' }
+  }
+]
+
 const Classes = () => {
   const [classes, setClasses] = useState([])
   const [levels, setLevels] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [usingDemoData, setUsingDemoData] = useState(false)
   const [editingClass, setEditingClass] = useState(null)
   const [formData, setFormData] = useState({
     day: 'Monday',
@@ -23,7 +49,8 @@ const Classes = () => {
     try {
       setLoading(true)
       const { data: levelsData } = await supabase.from('levels').select('*').order('name')
-      setLevels(levelsData || [])
+      const resolvedLevels = levelsData?.length ? levelsData : demoLevels
+      setLevels(resolvedLevels)
 
       const { data: classesData, error } = await supabase
         .from('classes')
@@ -34,9 +61,13 @@ const Classes = () => {
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      setClasses(classesData || [])
+      setClasses(classesData?.length ? classesData : demoClasses)
+      setUsingDemoData(!classesData?.length || !levelsData?.length)
     } catch (error) {
       console.error('Error fetching data:', error.message)
+      setLevels(demoLevels)
+      setClasses(demoClasses)
+      setUsingDemoData(true)
     } finally {
       setLoading(false)
     }
@@ -44,6 +75,31 @@ const Classes = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    const levelName = levels.find((level) => level.id === formData.level_id)?.name || 'N/A'
+
+    if (usingDemoData) {
+      if (editingClass) {
+        setClasses((previous) =>
+          previous.map((classItem) =>
+            classItem.id === editingClass.id ? { ...classItem, ...formData, levels: { name: levelName } } : classItem
+          )
+        )
+      } else {
+        setClasses((previous) => [
+          {
+            id: Date.now().toString(),
+            ...formData,
+            levels: { name: levelName }
+          },
+          ...previous
+        ])
+      }
+      setShowModal(false)
+      setEditingClass(null)
+      setFormData({ day: 'Monday', time_slot: '', ice_location: '', level_id: levels[0]?.id || '' })
+      return
+    }
+
     try {
       if (editingClass) {
         const { error } = await supabase
@@ -79,6 +135,11 @@ const Classes = () => {
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this class?')) return
+    if (usingDemoData) {
+      setClasses((previous) => previous.filter((classItem) => classItem.id !== id))
+      return
+    }
+
     try {
       const { error } = await supabase.from('classes').delete().eq('id', id)
       if (error) throw error

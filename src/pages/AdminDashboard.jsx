@@ -8,6 +8,11 @@ const AdminDashboard = () => {
     { label: 'Instructors', value: '12', icon: <Users size={24} />, color: '#8b5cf6' },
     { label: 'Attendance Rate', value: '92%', icon: <TrendingUp size={24} />, color: '#f59e0b' },
   ]
+  const recentClasses = [
+    { id: 'c1', day: 'Monday', time: '4:00 PM', level: 'Basic Skills 1', rink: 'Rink A' },
+    { id: 'c2', day: 'Wednesday', time: '5:30 PM', level: 'Basic Skills 2', rink: 'Rink B' },
+    { id: 'c3', day: 'Saturday', time: '10:00 AM', level: 'Pre-Free Skate', rink: 'Rink A' }
+  ]
 
   return (
     <div>
@@ -56,10 +61,14 @@ const AdminDashboard = () => {
           border: '1px solid var(--sidebar-border)'
         }}>
           <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.25rem' }}>Recent Classes</h3>
-          <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '2rem' }}>
-            <Calendar size={48} style={{ opacity: 0.1, marginBottom: '1rem' }} />
-            <p>No classes scheduled for today.</p>
-          </div>
+          {recentClasses.map((classItem) => (
+            <div key={classItem.id} style={{ padding: '0.75rem 0', borderBottom: '1px solid #f1f5f9' }}>
+              <p style={{ fontWeight: 600, fontSize: '0.9rem' }}>{classItem.level}</p>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                {classItem.day} at {classItem.time} - {classItem.rink}
+              </p>
+            </div>
+          ))}
         </div>
 
         <div style={{

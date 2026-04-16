@@ -1,7 +1,10 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Calendar, Award, Star } from 'lucide-react'
 
 const StudentDashboard = () => {
+  const navigate = useNavigate()
+
   return (
     <div>
       <div style={{ marginBottom: '2rem' }}>
@@ -67,7 +70,10 @@ const StudentDashboard = () => {
             Your balance is improving significantly. Focus on keeping your head up during the back edges.
           </p>
           <div style={{ marginTop: '1rem' }}>
-            <button style={{ color: 'var(--primary-color)', fontSize: '0.875rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <button
+              onClick={() => navigate('/student/progress')}
+              style={{ color: 'var(--primary-color)', fontSize: '0.875rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            >
               <Award size={16} /> View Full Report
             </button>
           </div>

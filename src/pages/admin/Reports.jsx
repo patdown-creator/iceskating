@@ -2,8 +2,38 @@ import React, { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { Printer, Search, Download, Award, User } from 'lucide-react'
 
+const demoClasses = [
+  { id: 'demo-class-1', day: 'Monday', time_slot: '4:00 PM - 5:00 PM', levels: { name: 'Basic Skills 1' } },
+  { id: 'demo-class-2', day: 'Wednesday', time_slot: '5:30 PM - 6:30 PM', levels: { name: 'Basic Skills 2' } },
+  { id: 'demo-class-3', day: 'Saturday', time_slot: '10:00 AM - 11:00 AM', levels: { name: 'Pre-Free Skate' } }
+]
+
+const demoReports = [
+  {
+    id: 'demo-report-1',
+    class_id: 'demo-class-1',
+    profiles: { full_name: 'Emma Carter' },
+    classes: { levels: { name: 'Basic Skills 1' } },
+    instructor_id: 'Coach Sarah',
+    created_at: '2026-04-05T15:00:00Z',
+    feedback: 'Strong progress with forward swizzles and one-foot glide. Keep knees bent through turns.',
+    skills_achieved: ['Forward Swizzles', 'One-Foot Glide']
+  },
+  {
+    id: 'demo-report-2',
+    class_id: 'demo-class-2',
+    profiles: { full_name: 'Noah Lee' },
+    classes: { levels: { name: 'Basic Skills 2' } },
+    instructor_id: 'Coach Maria',
+    created_at: '2026-04-09T16:00:00Z',
+    feedback: 'Crossovers are more controlled this week. Practice stronger pushes on the outside edge.',
+    skills_achieved: ['Forward Crossovers', 'Two-Foot Spin Entry']
+  }
+]
+
 const Reports = () => {
   const [selectedClass, setSelectedClass] = useState('all')
+  const [searchTerm, setSearchTerm] = useState('')
   const [reports, setReports] = useState([])
   const [classes, setClasses] = useState([])
   const [loading, setLoading] = useState(true)
@@ -19,11 +49,13 @@ const Reports = () => {
       const { data: classData } = await supabase
         .from('classes')
         .select('*, levels(name)')
-      setClasses(classData || [])
+      setClasses(classData?.length ? classData : demoClasses)
 
       await fetchReports()
     } catch (err) {
       console.error(err)
+      setClasses(demoClasses)
+      setReports(demoReports)
     } finally {
       setLoading(false)
     }
@@ -39,7 +71,8 @@ const Reports = () => {
       `)
       .order('created_at', { ascending: false })
     
-    if (!error) setReports(data || [])
+    if (!error) setReports(data?.length ? data : demoReports)
+    if (error) setReports(demoReports)
   }
 
   const exportToCSV = () => {
@@ -73,9 +106,20 @@ const Reports = () => {
     window.print()
   }
 
-  const filteredReports = reports.filter(r => 
-    selectedClass === 'all' || r.class_id === selectedClass
-  )
+  const handleShare = (report) => {
+    const text = `Shared ${report.profiles?.full_name}'s feedback report.`
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text)
+    }
+    alert(`${text} (summary copied to clipboard if available)`)
+  }
+
+  const filteredReports = reports.filter((report) => {
+    const classMatches = selectedClass === 'all' || report.class_id === selectedClass
+    const studentName = report.profiles?.full_name || ''
+    const studentMatches = studentName.toLowerCase().includes(searchTerm.toLowerCase())
+    return classMatches && studentMatches
+  })
 
   return (
     <div>
@@ -114,6 +158,8 @@ const Reports = () => {
             <input 
               type="text" 
               placeholder="Student name..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               style={{ width: '100%', padding: '0.75rem 0.75rem 0.75rem 2.5rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}
             />
           </div>
@@ -176,16 +222,18 @@ const Reports = () => {
                 >
                   <Printer size={18} /> Print
                 </button>
-                <button 
-                  disabled
+                <button
+                  onClick={() => handleShare(report)}
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
                     padding: '0.625rem', borderRadius: '0.5rem',
-                    background: '#f1f5f9', color: '#94a3b8',
-                    fontWeight: 600, fontSize: '0.875rem'
+                    background: '#f1f5f9', color: '#334155',
+                    fontWeight: 600, fontSize: '0.875rem',
+                    border: '1px solid #cbd5e1',
+                    cursor: 'pointer'
                   }}
                 >
-                  Shared
+                  Share
                 </button>
               </div>
             </div>
@@ -197,8 +245,6 @@ const Reports = () => {
           )}
         </div>
       )}
-    </div>
-
       {/* Print-only View (Hidden in normal UI) */}
       <div id="print-area" className="print-only" style={{ display: 'none' }}>
         {/* Style this for paper output */}

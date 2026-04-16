@@ -40,9 +40,23 @@ const Login = () => {
   }
 
   const handleDemoLogin = async (role) => {
-    setEmail(`${role}@example.com`)
-    setPassword('password123')
-    // In a real app, this would trigger an actual login or just mock it for MVP demo
+    const demoEmail = `${role}@example.com`
+    const demoPassword = 'password123'
+    setEmail(demoEmail)
+    setPassword(demoPassword)
+    
+    // Automatically trigger login for better demo experience
+    setLoading(true)
+    setError(null)
+    try {
+      const { data, error } = await signIn({ email: demoEmail, password: demoPassword })
+      if (error) throw error
+      navigate('/')
+    } catch (err) {
+      setError(err.message || 'Failed to sign in with demo account')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -166,7 +180,7 @@ const Login = () => {
 
         <div style={{ marginTop: '2rem' }}>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', marginBottom: '1rem' }}>
-            DEMO ACCOUNTS (Coming Soon)
+            DEMO ACCOUNTS
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
             <button onClick={() => handleDemoLogin('admin')} style={{ fontSize: '0.75rem', border: '1px solid #e2e8f0', padding: '0.5rem', borderRadius: '0.25rem' }}>Admin</button>

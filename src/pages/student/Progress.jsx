@@ -2,6 +2,23 @@ import React, { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { CheckCircle2, Star, Trophy } from 'lucide-react'
 
+const demoReports = [
+  {
+    id: 'demo-progress-1',
+    created_at: '2026-03-22T13:00:00Z',
+    classes: { levels: { name: 'Pre-Free Skate' } },
+    skills_achieved: ['Forward Crossovers', 'Backward One-Foot Glide', 'Two-Foot Spin'],
+    feedback: 'Great edge control this week. Keep shoulders steady during spin entry.'
+  },
+  {
+    id: 'demo-progress-2',
+    created_at: '2026-04-08T13:00:00Z',
+    classes: { levels: { name: 'Free Skate 1' } },
+    skills_achieved: ['Waltz Jump', 'Half Flip Entry'],
+    feedback: 'Jump timing is improving. Continue focusing on clean takeoff posture.'
+  }
+]
+
 const StudentProgress = () => {
   const [reports, setReports] = useState([])
   const [loading, setLoading] = useState(true)
@@ -21,13 +38,14 @@ const StudentProgress = () => {
           *,
           classes (levels (name))
         `)
-        .eq('student_id', user.id)
+        .eq('student_id', user?.id || '')
         .order('created_at', { ascending: false })
       
       if (error) throw error
-      setReports(data || [])
+      setReports(data?.length ? data : demoReports)
     } catch (err) {
       console.error(err)
+      setReports(demoReports)
     } finally {
       setLoading(false)
     }

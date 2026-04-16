@@ -1,7 +1,10 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Calendar, ClipboardCheck, Award } from 'lucide-react'
 
 const InstructorDashboard = () => {
+  const navigate = useNavigate()
+
   return (
     <div>
       <div style={{ marginBottom: '2rem' }}>
@@ -70,7 +73,12 @@ const InstructorDashboard = () => {
                 <td style={{ padding: '1rem', borderTop: '1px solid #e2e8f0' }}>Basic 1 - Group A</td>
                 <td style={{ padding: '1rem', borderTop: '1px solid #e2e8f0' }}>Basic 1</td>
                 <td style={{ padding: '1rem', borderTop: '1px solid #e2e8f0' }}>
-                  <button style={{ color: 'var(--primary-color)', fontWeight: 600, fontSize: '0.875rem' }}>Mark Attendance</button>
+                  <button
+                    onClick={() => navigate('/instructor/attendance')}
+                    style={{ color: 'var(--primary-color)', fontWeight: 600, fontSize: '0.875rem' }}
+                  >
+                    Mark Attendance
+                  </button>
                 </td>
               </tr>
               <tr>
@@ -78,7 +86,12 @@ const InstructorDashboard = () => {
                 <td style={{ padding: '1rem', borderTop: '1px solid #e2e8f0' }}>Intermediate Spins</td>
                 <td style={{ padding: '1rem', borderTop: '1px solid #e2e8f0' }}>Freeskate 2</td>
                 <td style={{ padding: '1rem', borderTop: '1px solid #e2e8f0' }}>
-                  <button style={{ color: 'var(--primary-color)', fontWeight: 600, fontSize: '0.875rem' }}>Mark Attendance</button>
+                  <button
+                    onClick={() => navigate('/instructor/attendance')}
+                    style={{ color: 'var(--primary-color)', fontWeight: 600, fontSize: '0.875rem' }}
+                  >
+                    Mark Attendance
+                  </button>
                 </td>
               </tr>
             </tbody>

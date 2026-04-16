@@ -2,9 +2,17 @@ import React, { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { Shield, Search } from 'lucide-react'
 
+const demoUsers = [
+  { id: 'demo-user-1', full_name: 'Jordan Blake', email: 'jordan@example.com', role: 'admin' },
+  { id: 'demo-user-2', full_name: 'Coach Sarah Kim', email: 'sarah@example.com', role: 'instructor' },
+  { id: 'demo-user-3', full_name: 'Emma Carter', email: 'emma@example.com', role: 'student' },
+  { id: 'demo-user-4', full_name: 'Noah Lee', email: 'noah@example.com', role: 'student' }
+]
+
 const AdminUsers = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [users, setUsers] = useState([])
+  const [usingDemoData, setUsingDemoData] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -20,9 +28,12 @@ const AdminUsers = () => {
         .order('full_name')
       
       if (error) throw error
-      setUsers(data || [])
+      setUsers(data?.length ? data : demoUsers)
+      setUsingDemoData(!data?.length)
     } catch (error) {
       console.error('Error fetching users:', error.message)
+      setUsers(demoUsers)
+      setUsingDemoData(true)
     } finally {
       setLoading(false)
     }
@@ -33,6 +44,13 @@ const AdminUsers = () => {
     const nextRole = roles[(roles.indexOf(currentRole) + 1) % roles.length]
     
     if (!window.confirm(`Change role from ${currentRole} to ${nextRole}?`)) return
+
+    if (usingDemoData) {
+      setUsers((previous) =>
+        previous.map((user) => (user.id === userId ? { ...user, role: nextRole } : user))
+      )
+      return
+    }
 
     try {
       const { error } = await supabase
